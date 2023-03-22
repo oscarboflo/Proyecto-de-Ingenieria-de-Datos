@@ -1,0 +1,199 @@
+library(shiny)
+library(shinythemes)
+#install.packages("tidyverse")
+library(tidyverse)
+library(readr)
+library(corrplot)
+library(flexdashboard)
+library(DBI)
+library(odbc)
+library(FactoMineR)
+library(factoextra)
+library(highcharter)
+library("corrplot")
+library(ggplot2)
+#install.packages("plotly")
+library(plotly)
+#install.packages("gganimate")
+library(gganimate)
+library(readxl)
+#install.packages("ca")
+library("ca")
+#install.packages("openxlsx")
+library(openxlsx)
+library(readxl)
+#install.packages("dplyr")
+library(dplyr)
+#install.packages("plotly")
+library(plotly)
+library("ca")
+#install.packages("highcharter")
+library(highcharter)
+
+#limpiar
+#rm(list = ls())
+
+#directorio de trabajo
+#setwd("~/ESPOL/4TO/Ingeniería de Datos/Proyecto/Proyecto en R")
+datos <- read_excel("C:/Users/USUARIO/Pictures/Proyecto de Ingeniería de Datos/Infosexo_concantidad.xls")
+
+#Coneccion via ODBC
+#con <- dbConnect(odbc(), "Proyecto", Database = "Proyecto Ingeniería de Datos")
+#sql = "select * from info_del_sexo_concantidad"
+
+#obteniendo los datos y visualizandolos
+#(datos <- dbGetQuery(con, sql))
+#View(datos)
+
+#Datos para el Modelo
+datos1 <- read.csv("C:/Users/USUARIO/Pictures/Proyecto de Ingeniería de Datos/Modelo_final.csv")
+
+#Conección vía ODBC
+
+
+
+#con <- dbConnect(odbc(), "Proyecto", Database = "Proyecto Ingeniería de Datos")
+#sql1 = "select * from modelo_final"   
+
+#(datos1 <- dbGetQuery(con, sql1))
+
+# Define UI for application that draws a histogram
+ui <- navbarPage(title = "Proyecto de Ingeniería de Datos",
+                 theme = shinytheme("cerulean"),
+                 navbarMenu("Presentación del Proyecto",
+                            tabPanel("Número de la Data",div(tags$img(src = "https://i.postimg.cc/vBSS3kJ7/imagen-2022-08-01-222740591.png", height = "600px", width="1050"), style="text-align: center;")),
+                            tabPanel("Fuente de la Base de Datos", div(tags$img(src = "https://i.postimg.cc/4x97dc4X/imagen-2022-08-01-223235295.png", height = "600px", width="1050px"), style="text-align: center;")),
+                            tabPanel("Variables en la Base de Datos", div(tags$img(src = "https://i.postimg.cc/zfMqRtxM/imagen-2022-08-01-223534666.png", height = "600px", width="950px"), style="text-align: center;"))),
+                 navbarMenu("Creacion del Modelo",
+                            tabPanel("Usando Data warehouse",div(tags$img(src = "https://i.postimg.cc/tR8Dmhcj/imagen-2022-08-01-224556722.png", height = "600px", width="1050px"), style="text-align: center;")),
+                            tabPanel("Agregando los CSV", div(tags$img(src = "https://i.postimg.cc/13sGLMcL/imagen-2022-08-01-224721539.png", height = "600px", width="1050px"), style="text-align: center;")),
+                            tabPanel("Modelo Entidad-Relación", div(tags$img(src = "https://i.postimg.cc/ZKF3Fptj/imagen-2022-08-01-224911304.png", height = "600px", width="950px"), style="text-align: center;"))),
+                 navbarMenu("Visualización de la tabla Resultante",
+                            tabPanel("Consulta hecha en SQL",div(tags$img(src = "https://i.postimg.cc/7L87C7Mj/imagen-2022-08-06-125255105.png", height = "400px", width="1050px"), style="text-align: center;")),
+                            tabPanel("Resultado de la Tabla",dataTableOutput("viewdatos"))),
+                 navbarMenu("Análisis Exploratorio",
+                            tabPanel("Edad Máxima según el Sexo",highchartOutput("hist1")),
+                            tabPanel("Edad Promedio según el Sexo",highchartOutput("hist2")),
+                            tabPanel("Edad Minima según el Sexo",highchartOutput("hist3")),
+                            tabPanel("Cantidad según el Sexo",highchartOutput("hist4")),
+                            tabPanel("Diagrama de Cajas",plotlyOutput("boxplot1"))),
+                 navbarMenu("Modelo Estadístico",
+                            tabPanel("Consulta hecha en SQL",div(tags$img(src = "https://i.postimg.cc/2j2Mhp8F/imagen-2022-08-06-154750005.png", height = "400px", width="1050px"), style="text-align: center;")),
+                            tabPanel("Resultado de la Tabla para el Modelo Estadístico",dataTableOutput("viewdatos2")),
+                            tabPanel("Agregando un Rango de Edad",dataTableOutput("viewdatos3")),
+                            tabPanel("ACM de las columnas",verbatimTextOutput("summaryfit1"),style="text-align: center;"),
+                            tabPanel("Tabla DF_Coordenadas con la funcion acm",div(tags$img(src = "https://i.postimg.cc/0QR0gYRZ/imagen-2022-08-06-170808809.png", height = "600px", width="600px"), style="text-align: center;")),
+                            tabPanel("Análisis de Correspondencia Múltiple", highchartOutput("hc_acm")),
+                            tabPanel("Gráfico de Codo", plotOutput("grafcodo"))
+                 )
+                 #tabPanel("tab 2", "contents")
+)
+
+
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+  output$hist1 <- renderHighchart({
+    datos %>%
+      hchart("column", hcaes(x=tipo_sexo, y = Edad_Maxima, color = c("green", "orange", "yellow")))
+    
+  })
+  output$hist2 <- renderHighchart({
+    datos %>%
+      hchart(
+        "column", hcaes(x=tipo_sexo, y = Edad_Promedio, color = c("orange", "red", "green"))
+      )
+    
+  })
+  output$hist3 <- renderHighchart({
+    datos %>%
+      hchart(
+        "column", hcaes(x=tipo_sexo, y = Edad_Minima, color = c("orange", "brown", "green"))
+      )
+    
+  })
+  output$hist4 <- renderHighchart({
+    datos %>%
+      hchart(
+        "column", hcaes(x=tipo_sexo, y = Cuenta, color = c("orange", "brown", "green"))
+      )
+    
+  })
+  output$viewdatos <- renderDataTable({
+    datos
+  })
+  output$viewdatos2 <- renderDataTable({
+    datos1
+  })
+  output$viewdatos3 <- renderDataTable({
+    datos1 <- datos1 %>%
+      mutate(rango_edad = case_when(edad <= 10 ~ 'Edad entre 0 y 10 años',
+                                    between(edad, 11,20) ~ 'Edad entre 11 y 20 años',
+                                    between(edad, 21,30) ~ 'Edad entre 21 y 30 años',
+                                    between(edad, 31,40) ~ 'Edad entre 31 y 40 años',
+                                    between(edad, 41,50) ~ 'Edad entre 41 y 50 años',
+                                    between(edad, 51,60) ~ 'Edad entre 51 y 60 años',
+                                    between(edad, 61,70) ~ 'Edad entre 61 y 70 años',
+                                    between(edad, 71,80) ~ 'Edad entre 71 y 80 años',
+                                    between(edad, 81,90) ~ 'Edad entre 81 y 90 años',
+                                    edad >= 90 ~ 'Edad mayor a 90 años'  
+      )) %>%
+      mutate(rango_edad = as_factor(rango_edad))
+    #Para eliminar datos
+    datos1 <- datos1 %>%
+      select(!edad)
+    ##
+    datos1$tipo_sexo <- as.factor(datos1$tipo_sexo)
+    datos1$tipo_naci <- as.factor(datos1$tipo_naci)
+    datos1$tipo_mov <- as.factor(datos1$tipo_mov)
+    datos1$tipo_mediotransporte <- as.factor(datos1$tipo_mediotransporte)
+    datos1$rango_edad <- as.factor(datos1$rango_edad)
+    datos1$motivo <- as.factor(datos1$motivo)
+    
+    levels(datos1$tipo_mediotransporte) <- c('Via Aerea', 'Via Fluvial', 'Via Martima', 'Via Terrestre')
+    datos1
+  })
+  output$hc_acm <- renderHighchart({
+    highchart_plot <- highchart() %>%
+      hc_title(text = 'Análisis de Correspondencia Múltiple') %>%
+      hc_add_series(df_coordenadas, type = 'scatter', hcaes(x = acm_s_col...5., y = acm_s_col...8., name = categorias, group = variables$GRUPO),
+                    dataLabels = list(format = "{point.name}", enabled = TRUE),
+                    tooltip = list(pointFormat = "{point.name}")) %>%
+      hc_xAxis(title = list(text = 'd1'), plotLines = list(list(value=0,color='lightblue',width=2,zIndex=4))) %>%
+      hc_yAxis(title = list(text = 'd2'), plotLines = list(list(value=0,color='lightblue',width=2,zIndex=4)))
+    
+    highchart_plot
+  })
+  output$boxplot1 <- renderPlotly({
+    fig <- plot_ly(type = 'box')
+    fig <- fig %>% add_boxplot(y = datos$Edad_Maxima, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                               marker = list(color = 'rgb(7,40,89)'),
+                               line = list(color = 'rgb(7,40,89)'),
+                               name = "Edad Maxima")
+    fig <- fig %>% add_boxplot(y = datos$Edad_Minima, name = "Edad Minima", boxpoints = "all",
+                               marker = list(color = 'rgb(9,56,125)'),
+                               line = list(color = 'rgb(9,56,125)'))
+    fig <- fig %>% add_boxplot(y = datos$Edad_Promedio, name = "Edad Promedio", boxpoints = 'all',
+                               marker = list(color = 'rgb(8,81,156)',
+                                             outliercolor = 'rgba(219, 64, 82, 0.6)',
+                                             line = list(outliercolor = 'rgba(219, 64, 82, 1.0)',
+                                                         outlierwidth = 2)),
+                               line = list(color = 'rgb(8,81,156)'))
+    fig <- fig %>% layout(title = "Diagrama de Cajas de la Edad según su sexo")
+    
+    fig
+  })
+  output$grafcodo <- renderPlot({
+    eig.val <- get_eigenvalue(acm)
+    #eig.val
+    ## Scree plot
+    fviz_screeplot(acm, addlabels = TRUE)
+  })
+  output$summaryfit1 <- renderPrint({
+    acm_s_col <- summary(acm)$columns
+    acm_s_col
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
